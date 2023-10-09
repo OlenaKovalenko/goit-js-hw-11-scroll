@@ -16,7 +16,7 @@ let searchQuery = '';
 
 let options = {
   root: null,
-  rootMargin: "0px",
+  rootMargin: "100px",
   threshold: 1.0,
 };
 
@@ -76,7 +76,6 @@ async function onLoadMore() {
         simplelightbox.refresh();
 
     const totalPage = Math.ceil(totalHits / perPage);
-            console.log(totalPage);
             if (page === totalPage) {
                 observer.unobserve(refs.target);
             }    

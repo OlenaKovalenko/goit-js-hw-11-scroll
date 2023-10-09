@@ -8,7 +8,6 @@ import { createMarkup } from './createMarkup';
 
 refs.searchForm.addEventListener('submit', onFormSubmit);
 
-// refs.loadMore.style.display = 'none';
 
 const simplelightbox = new SimpleLightbox('.gallery a');
 
@@ -17,11 +16,11 @@ let searchQuery = '';
 
 let options = {
   root: null,
-  rootMargin: "300px",
+  rootMargin: "0px",
   threshold: 1.0,
 };
 
-let observer = new IntersectionObserver(onLoad, options);
+let observer = new IntersectionObserver(handleObserver, options);
 
 async function onFormSubmit(event) {
     event.preventDefault();
@@ -39,7 +38,7 @@ async function onFormSubmit(event) {
     page = 1;
     const { hits, totalHits } = await fetchBySearch(searchQuery, page);
 
-    if (hits.length === 0) {
+    if (hits === 0) {
         refs.galleryContainer.innerHTML = '';
         Notify.failure("Sorry, there are no images matching your search query. Please try again.", error);
         return;
@@ -67,56 +66,36 @@ async function onFormSubmit(event) {
 }
 }
 
-function onLoad(entries, observer) {
-    console.log(entries);
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            page += 1;
-            const { hits, totalHits } = fetchBySearch(searchQuery, page);
-            createMarkup(hits);
-            simplelightbox.refresh();
 
-            const totalPage = Math.ceil(totalHits / perPage);
+async function onLoadMore() {
+    page += 1;
+
+    try {
+        const { hits, totalHits } = await fetchBySearch(searchQuery, page);
+        createMarkup(hits);
+        simplelightbox.refresh();
+
+    const totalPage = Math.ceil(totalHits / perPage);
             console.log(totalPage);
-            
+            if (page === totalPage) {
+                observer.unobserve(refs.target);
+            }    
+
+    }
+    catch (error) {
+        Notify.failure('Oops! Something went wrong. Please try again later.', error);
+    }
+}
+
+
+function handleObserver(entries, observer) {
+        entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            onLoadMore();
         }
     })
 }
 
-
-// async function onLoadMore() {
-//     page += 1;
-
-//     try {
-//         const { hits, totalHits } = await fetchBySearch(searchQuery, page);
-//         createMarkup(hits);
-//         simplelightbox.refresh();
-
-//     const { height: cardHeight } = document
-//         .querySelector(".gallery")
-//         .firstElementChild.getBoundingClientRect();
-
-//     scrollDistance = cardHeight * 2.5;
-
-//         window.scrollBy({
-//         top: scrollDistance,
-//         behavior: "smooth",
-//         });
-        
-//     if ((totalHits - ((page - 1) * perPage)) <= perPage) {
-//         Notify.info("We're sorry, but you've reached the end of search results.");
-//         refs.loadMore.classList.add('visually-hidden');
-//         refs.loadMore.style.display = 'none';
-        
-//     } else {
-//         refs.loadMore.classList.remove('visually-hidden');
-//         refs.loadMore.style.display = 'block';
-//         }
-//     }
-//     catch (error) {
-//         Notify.failure('Oops! Something went wrong. Please try again later.', error);
-//     }
-// }
 
 refs.btnScrollUp.addEventListener('click', () => {
     window.scroll(0, 0);
